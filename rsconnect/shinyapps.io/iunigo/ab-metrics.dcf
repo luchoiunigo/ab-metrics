@@ -1,0 +1,12 @@
+name: ab-metrics
+title:
+username:
+account: iunigo
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1246119
+bundleId: 2445909
+url: https://iunigo.shinyapps.io/ab-metrics/
+when: 1569461618.39879
+asMultiple: FALSE
+asStatic: FALSE
