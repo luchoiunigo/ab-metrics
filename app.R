@@ -34,10 +34,11 @@ ui <- dashboardPage(
                   tags$li("Dados los dos tamaños de las muestras, cual es el mimino cvr esperado del experimento para considerarlo como estadisticamente exitoso, bajo un nivel de confianza elegido"),
                   tags$li("Definido una diferencia entre cvr a la que se quiere llegar, cual es el n de la muestra del experimento que lo hace posible, bajo un nivel de confianza elegido"),
                   
-                  h3("Behind the scenes"),
-                  p("Se esta haciendo el siguiente test de hipotesis de proporciones:"),
-                  tags$li('Ho ---> p1 = p2'),
-                  tags$li('Ha ---> p1 < p2')
+                  #h3("Behind the scenes"),
+                  br(),
+                  p("Primero se debe elegir que tipo de problema se quiere resolver, luego completar con los datos indicados:")
+                  #tags$li('Ho ---> p1 = p2'),
+                  #tags$li('Ha ---> p1 < p2')
                   
                 ),
                 column(width = 12, offset = 0
@@ -48,6 +49,21 @@ ui <- dashboardPage(
                 )
               ),
               br(),
+              fluidRow(box(#title = "Elegir el tipo de problema",
+                           width = 12,
+                           status = "warning",
+                           solidHeader = FALSE,
+                           radioButtons(inputId = "problem_type_pre",
+                                        label = "Elegir tipo de problema",
+                                        inline = FALSE,
+                                        choices = c(
+                                               "P(control) < P(experimento)" = "greater",
+                                               "P(control) > P(experimento)" = "lower"
+                                                )
+                                        )
+                           )
+                       ),
+              #br(),
               fluidRow(
                 shinydashboard::box(
                   width = 6, status = "info", solidHeader = FALSE,
@@ -86,10 +102,25 @@ ui <- dashboardPage(
                 column(width = 11, offset = 1,
                        h2("Experimento finalizado"),
                        p("Este apartado sirve para entender los resultados del experimento:"),
-                       tags$li("Dados los dos tamaños de las muestras, los dos resultados de conversion de cada muestra y el nivel de confianza elegido, se calcula si los resultados son estadisticamente significativos para garantizar que el cvr del experimento es mayor al cvr del grupo de control")
+                       tags$li("Dados los dos tamaños de las muestras, los dos resultados de conversion de cada muestra y el nivel de confianza elegido, se calcula si los resultados son estadisticamente significativos para garantizar que el cvr del experimento es mayor  (o menor) al cvr del grupo de control")
                 )
               ),
               br(),
+              fluidRow(box(#title = "Elegir el tipo de problema",
+                width = 12,
+                status = "warning",
+                solidHeader = FALSE,
+                radioButtons(inputId = "problem_type_post",
+                             label = "Elegir tipo de problema",
+                             inline = FALSE,
+                             choices = c(
+                               "P(control) < P(experimento)" = "greater",
+                               "P(control) > P(experimento)" = "lower"
+                             )
+                )
+              )
+              ),
+             # br(),
               fluidRow(
                 shinydashboard::box(
                   width = 12, status = "info", solidHeader = FALSE,
@@ -107,7 +138,10 @@ ui <- dashboardPage(
                   valueBoxOutput("ab_result")
                 )
       )
-    )
+    ),
+    tabItem("debug",
+            textOutput(outputId = "text_debug"))
+    
   )
 )
 )
@@ -116,7 +150,7 @@ ui <- dashboardPage(
 # SERVER
 server <- function(input,output,session){
   
-  # disply Hypothesis Test formula
+  # display Hypothesis Test formula
   output$ab_h0_formula <- renderUI({
     #withMathJax("$$\\{H}_{\\small{\\textrm{0}}} = {H}_{\\small{\\textrm{1}}} $$")
     print("$$H_{\\small{\\textrm{0}}} = H_{\\small{\\textrm{1}}}$$")
@@ -129,7 +163,18 @@ server <- function(input,output,session){
   
   # CVR calculation
   cvr_values <- eventReactive(input$cvr_calculate,{
-    data = data.frame(n1=c(input$cvr_n1), n2=c(input$cvr_n2), p1=c(input$cvr_p1), confidence=c(input$cvr_confidence))
+    
+    if(input$problem_type_pre == "greater"){
+      
+      cvr_confidence <- input$cvr_confidence
+      
+    }else if(input$problem_type_pre == "lower"){
+      
+      cvr_confidence = 1 - input$cvr_confidence
+      
+    }
+    
+    data = data.frame(n1=c(input$cvr_n1), n2=c(input$cvr_n2), p1=c(input$cvr_p1), confidence=c(cvr_confidence))
     return(data)
   })
   
@@ -153,7 +198,18 @@ server <- function(input,output,session){
   
   # n calculation
   n_values <- eventReactive(input$n_calculate,{
-    data = data.frame(n1=c(input$n_n1), p1=c(input$n_p1), p2=c(input$n_p2), confidence=c(input$n_confidence))
+    
+    if(input$problem_type_pre == "greater"){
+      
+      n_confidence <- input$n_confidence
+      
+    }else if(input$problem_type_pre == "lower"){
+      
+      n_confidence = 1 - input$n_confidence
+      
+    }    
+    
+    data = data.frame(n1=c(input$n_n1), p1=c(input$n_p1), p2=c(input$n_p2), confidence=c(n_confidence))
     return(data)
   })
   
@@ -178,8 +234,21 @@ server <- function(input,output,session){
 
   # AB calculation
   ab_values <- eventReactive(input$ab_calculate,{
-    data = data.frame(n1=c(input$ab_n1), n2=c(input$ab_n2), p1=c(input$ab_p1), p2=c(input$ab_p2), confidence=c(input$ab_confidence))
+    
+    if(input$problem_type_post == "greater"){
+      
+      ab_confidence <- input$ab_confidence
+      
+    }else if(input$problem_type_post == "lower"){
+      
+      ab_confidence = 1 - input$ab_confidence
+      
+    }        
+    
+    data = data.frame(n1=c(input$ab_n1), n2=c(input$ab_n2), p1=c(input$ab_p1), p2=c(input$ab_p2), confidence=c(ab_confidence))
+    
     return(data)
+    
   })
   
   # AB Result
@@ -196,24 +265,40 @@ server <- function(input,output,session){
     
     root <- zeta(p1,p2,n1,n2,z)
     
-    if (root < 0){
-      
-      color = 'red'
-      value <- "El experimento fallo   \U00002620"
-      subtitle <- "Los datos no son suficientes para sacar una conclusion posotiva"
-      
-    }else {
-      
-      color = 'green'
-      value <- utf8_print("Experimento exitoso   \U0001f64c")
-      subtitle <- " "
+    if (input$problem_type_post == 'greater'){
+      if (root < 0){
+        
+        color = 'red'
+        value <- "El experimento fallo   \U00002620"
+        subtitle <- "Los datos no son suficientes para sacar una conclusion positiva"
+        
+      }else {
+        
+        color = 'green'
+        value <- utf8_print("Experimento exitoso   \U0001f64c")
+        subtitle <- " "
+        
+      }
+    }else if (input$problem_type_post == 'lower'){
+      if (root > 0){
+        
+        color = 'red'
+        value <- "El experimento fallo   \U00002620"
+        subtitle <- "Los datos no son suficientes para sacar una conclusion positiva"
+        
+      }else {
+        
+        color = 'green'
+        value <- utf8_print("Experimento exitoso   \U0001f64c")
+        subtitle <- " "
+        
+      }     
       
     }
     
     valueBox(value, subtitle, icon = NULL, color = color, width = NULL, href = NULL)
     
   })
-  
 
 }
 
