@@ -5,8 +5,8 @@ account: iunigo
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1246119
-bundleId: 2493156
+bundleId: 2884290
 url: https://iunigo.shinyapps.io/ab-metrics/
-when: 1570845922.03732
+when: 1584307717.049
 asMultiple: FALSE
 asStatic: FALSE
