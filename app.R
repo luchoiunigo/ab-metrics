@@ -16,155 +16,162 @@ zeta <- function(p1,p2,n1,n2,z){
 
 
 # UI
-ui <- dashboardPage(
-  dashboardHeader(title = "AB Metrics"),
-  dashboardSidebar(
-    sidebarMenu(
-      menuItem("PRE Experimeto", tabName = "pre_test"),
-      menuItem("POST Experimento", tabName = "post_test",
-               menuSubItem("Frecuentista", tabName = "frec_test"),
-               menuSubItem("Bayes", tabName = 'bayes_test'))
-    )
-  ),
-  dashboardBody(
-    tabItems(
-      tabItem("pre_test",
-              fluidRow(
-                column(width = 11, offset = 1,
-                  h2("Ayuda en la definicion del experimento"),
-                  p("Este apartado sirve para ayudar a definir lo siguiente antes de realizar el experimento:"),
-                  tags$li("Dados los dos tamaños de las muestras, cual es el mimino cvr esperado del experimento para considerarlo como estadisticamente exitoso, bajo un nivel de confianza elegido"),
-                  tags$li("Definido una diferencia entre cvr a la que se quiere llegar, cual es el n de la muestra del experimento que lo hace posible, bajo un nivel de confianza elegido"),
-                  h3("Behind the scenes"),
-                  p("El problema que se quiere resolver es el del siguiente tipo: "),
-                  br()
-                ),
-                column(width=5, offset = 3,
-                       htmlOutput("freq_formula_pre_test"),
-                       br()
-                ),
-                column(width = 11, offset = 1,
-                       p("donde CONTROL es la data que no esta expuesta al cambio, y EXPERIMENTO es la data que si tuvo modificaciones"),
-                       
-                       br(),
-                       p("Primero se debe elegir que tipo de problema se quiere resolver, luego completar con los datos indicados:")
-                       #tags$li('Ho ---> p1 = p2'),
-                       #tags$li('Ha ---> p1 < p2')
-                       
-                ),
-                column(width = 12, offset = 0
-                       
-                       #withMathJax(),
-                       #uiOutput("ab_h0_formula"),
-                       #uiOutput("ab_h1_formula")
-                )
+dbHeader <- dashboardHeader(title = "AB Metrics",
+                            tags$li(a(href = 'https://www.iunigo.com.ar',
+                                      img(src = 'iunigo_blanco.png',
+                                          title = "Company Home", height = "30px"),
+                                      style = "padding-top:10px; padding-bottom:10px;"),
+                                    class = "dropdown"))
+
+
+dbSidebar <-    dashboardSidebar(
+  sidebarMenu(
+    menuItem("PRE Experimeto", tabName = "pre_test"),
+    menuItem("POST Experimento", tabName = "post_test",
+             menuSubItem("Frecuentista", tabName = "frec_test"),
+             menuSubItem("Bayes", tabName = 'bayes_test'))
+  )
+)
+
+dbBody <- dashboardBody(
+  tabItems(
+    tabItem("pre_test",
+            fluidRow(
+              column(width = 11, offset = 1,
+                     h2("Ayuda en la definicion del experimento"),
+                     p("Este apartado sirve para ayudar a definir lo siguiente antes de realizar el experimento:"),
+                     tags$li("Dados los dos tamaños de las muestras, cual es el mimino cvr esperado del experimento para considerarlo como estadisticamente exitoso, bajo un nivel de confianza elegido"),
+                     tags$li("Definido una diferencia entre cvr a la que se quiere llegar, cual es el n de la muestra del experimento que lo hace posible, bajo un nivel de confianza elegido"),
+                     h3("Behind the scenes"),
+                     p("El problema que se quiere resolver es el del siguiente tipo: "),
+                     br()
               ),
-              br(),
-              fluidRow(box(#title = "Elegir el tipo de problema",
-                           width = 12,
-                           status = "warning",
-                           solidHeader = FALSE,
-                           radioButtons(inputId = "problem_type_pre",
-                                        label = "Elegir tipo de problema",
-                                        inline = FALSE,
-                                        choices = c(
-                                               "P(control) < P(experimento)" = "greater",
-                                               "P(control) > P(experimento)" = "lower"
-                                                )
-                                        )
+              column(width=5, offset = 3,
+                     htmlOutput("freq_formula_pre_test"),
+                     br()
+              ),
+              column(width = 11, offset = 1,
+                     p("donde CONTROL es la data que no esta expuesta al cambio, y EXPERIMENTO es la data que si tuvo modificaciones"),
+                     
+                     br(),
+                     p("Primero se debe elegir que tipo de problema se quiere resolver, luego completar con los datos indicados:")
+                     #tags$li('Ho ---> p1 = p2'),
+                     #tags$li('Ha ---> p1 < p2')
+                     
+              ),
+              column(width = 12, offset = 0
+                     
+                     #withMathJax(),
+                     #uiOutput("ab_h0_formula"),
+                     #uiOutput("ab_h1_formula")
+              )
+            ),
+            br(),
+            fluidRow(box(#title = "Elegir el tipo de problema",
+              width = 12,
+              status = "warning",
+              solidHeader = FALSE,
+              radioButtons(inputId = "problem_type_pre",
+                           label = "Elegir tipo de problema",
+                           inline = FALSE,
+                           choices = c(
+                             "P(control) < P(experimento)" = "greater",
+                             "P(control) > P(experimento)" = "lower"
                            )
-                       ),
-              #br(),
-              fluidRow(
-                shinydashboard::box(
-                  width = 6, status = "info", solidHeader = FALSE,
-                  title = "Calcular minimo cvr para que el experimento sea estadisticamente exitoso",
-                  numericInput(inputId='cvr_n1', label="n1", value=1000),
-                  numericInput(inputId='cvr_n2', label="n2", value=1000),
-                  numericInput(inputId='cvr_p1', label="p1", value=0.5),
-                  numericInput(inputId='cvr_confidence', label="Confiabilidad", value=0.95),
-                  actionButton(inputId = 'cvr_calculate', label = "Calcular")
-                ),
-                shinydashboard::box(
-                  width = 6, status = "info", solidHeader = FALSE,
-                  title = "Calcular el n para garantizar una diferencia entre cvr estadisticamente exitosa",
-                  numericInput(inputId='n_n1', label="n1", value=1000),
-                  numericInput(inputId='n_p1', label="p1", value=0.5),
-                  numericInput(inputId='n_p2', label="p2", value=0.5),
-                  numericInput(inputId='n_confidence', label="Confiabilidad", value=0.95),
-                  actionButton(inputId = 'n_calculate', label = "Calcular")
-                )                
-              ),
-              fluidRow(
-                shinydashboard::box(
-                  width = 6, status = "info", solidHeader = TRUE,
-                  title = "Resultado",
-                  valueBoxOutput("cvr_result")
-                ),
-                shinydashboard::box(
-                  width = 6, status = "info", solidHeader = TRUE,
-                  title = "Resultado",
-                  valueBoxOutput("n_result")
-                )
               )
-      ),
-      tabItem("frec_test",
-              fluidRow(
-                column(width = 11, offset = 1,
-                       h2("Experimento finalizado"),
-                       p("Este apartado sirve para entender los resultados del experimento desde un enfoque frecuentista:"),
-                       tags$li("Dados los dos tamaños de las muestras, los dos resultados de conversion de cada muestra y el nivel de confianza elegido, se calcula si los resultados son estadisticamente significativos para garantizar que el cvr del experimento es mayor  (o menor) al cvr del grupo de control"),
-                       h3("Behind the scenes"),
-                       p("El problema que se quiere resolver es el del siguiente tipo: "),
-                       br()
-                ),
-                column(width=5, offset = 3,
-                       htmlOutput("freq_formula_post_test"),
-                       br()
-                ),
-                column(width = 11, offset = 1,
-                       p("donde CONTROL es la data que no esta expuesta al cambio, y EXPERIMENTO es la data que si tuvo modificaciones"),
-                       
-                       br(),
-                       p("Primero se debe elegir que tipo de problema se quiere resolver, luego completar con los datos indicados:")
-                       #tags$li('Ho ---> p1 = p2'),
-                       #tags$li('Ha ---> p1 < p2')
-                       
-                )
+            )
+            ),
+            #br(),
+            fluidRow(
+              shinydashboard::box(
+                width = 6, status = "info", solidHeader = FALSE,
+                title = "Calcular minimo cvr para que el experimento sea estadisticamente exitoso",
+                numericInput(inputId='cvr_n1', label="n1", value=1000),
+                numericInput(inputId='cvr_n2', label="n2", value=1000),
+                numericInput(inputId='cvr_p1', label="p1", value=0.5),
+                numericInput(inputId='cvr_confidence', label="Confiabilidad", value=0.95),
+                actionButton(inputId = 'cvr_calculate', label = "Calcular")
               ),
-              br(),
-              fluidRow(box(#title = "Elegir el tipo de problema",
-                width = 12,
-                status = "warning",
-                solidHeader = FALSE,
-                radioButtons(inputId = "problem_type_freq_post",
-                             label = "Elegir tipo de problema",
-                             inline = FALSE,
-                             choices = c(
-                               "P(control) < P(experimento)" = "greater",
-                               "P(control) > P(experimento)" = "lower"
-                             )
-                )
+              shinydashboard::box(
+                width = 6, status = "info", solidHeader = FALSE,
+                title = "Calcular el n para garantizar una diferencia entre cvr estadisticamente exitosa",
+                numericInput(inputId='n_n1', label="n1", value=1000),
+                numericInput(inputId='n_p1', label="p1", value=0.5),
+                numericInput(inputId='n_p2', label="p2", value=0.5),
+                numericInput(inputId='n_confidence', label="Confiabilidad", value=0.95),
+                actionButton(inputId = 'n_calculate', label = "Calcular")
+              )                
+            ),
+            fluidRow(
+              shinydashboard::box(
+                width = 6, status = "info", solidHeader = TRUE,
+                title = "Resultado",
+                valueBoxOutput("cvr_result")
+              ),
+              shinydashboard::box(
+                width = 6, status = "info", solidHeader = TRUE,
+                title = "Resultado",
+                valueBoxOutput("n_result")
               )
+            )
+    ),
+    tabItem("frec_test",
+            fluidRow(
+              column(width = 11, offset = 1,
+                     h2("Experimento finalizado"),
+                     p("Este apartado sirve para entender los resultados del experimento desde un enfoque frecuentista:"),
+                     tags$li("Dados los dos tamaños de las muestras, los dos resultados de conversion de cada muestra y el nivel de confianza elegido, se calcula si los resultados son estadisticamente significativos para garantizar que el cvr del experimento es mayor  (o menor) al cvr del grupo de control"),
+                     h3("Behind the scenes"),
+                     p("El problema que se quiere resolver es el del siguiente tipo: "),
+                     br()
               ),
-             # br(),
-              fluidRow(
-                shinydashboard::box(
-                  width = 12, status = "info", solidHeader = FALSE,
-                  title = "Calcular si la diferencia de cvr es estadisticamente significativa",
-                  numericInput(inputId='freq_ab_n1', label="n1", value=1000),
-                  numericInput(inputId='freq_ab_n2', label="n2", value=1000),
-                  numericInput(inputId='freq_ab_p1', label="p1", value=0.5),
-                  numericInput(inputId='freq_ab_p2', label="p2", value=0.5),
-                  numericInput(inputId='freq_ab_confidence', label="Confiabilidad", value=0.95),
-                  actionButton(inputId = 'freq_ab_calculate', label = "Calcular")
-                ),
-                shinydashboard::box(
-                  width = 12, status = "info", solidHeader = TRUE,
-                  title = "Resultado",
-                  valueBoxOutput("freq_ab_result")
-                )
-      )
+              column(width=5, offset = 3,
+                     htmlOutput("freq_formula_post_test"),
+                     br()
+              ),
+              column(width = 11, offset = 1,
+                     p("donde CONTROL es la data que no esta expuesta al cambio, y EXPERIMENTO es la data que si tuvo modificaciones"),
+                     
+                     br(),
+                     p("Primero se debe elegir que tipo de problema se quiere resolver, luego completar con los datos indicados:")
+                     #tags$li('Ho ---> p1 = p2'),
+                     #tags$li('Ha ---> p1 < p2')
+                     
+              )
+            ),
+            br(),
+            fluidRow(box(#title = "Elegir el tipo de problema",
+              width = 12,
+              status = "warning",
+              solidHeader = FALSE,
+              radioButtons(inputId = "problem_type_freq_post",
+                           label = "Elegir tipo de problema",
+                           inline = FALSE,
+                           choices = c(
+                             "P(control) < P(experimento)" = "greater",
+                             "P(control) > P(experimento)" = "lower"
+                           )
+              )
+            )
+            ),
+            # br(),
+            fluidRow(
+              shinydashboard::box(
+                width = 12, status = "info", solidHeader = FALSE,
+                title = "Calcular si la diferencia de cvr es estadisticamente significativa",
+                numericInput(inputId='freq_ab_n1', label="n1", value=1000),
+                numericInput(inputId='freq_ab_n2', label="n2", value=1000),
+                numericInput(inputId='freq_ab_p1', label="p1", value=0.5),
+                numericInput(inputId='freq_ab_p2', label="p2", value=0.5),
+                numericInput(inputId='freq_ab_confidence', label="Confiabilidad", value=0.95),
+                actionButton(inputId = 'freq_ab_calculate', label = "Calcular")
+              ),
+              shinydashboard::box(
+                width = 12, status = "info", solidHeader = TRUE,
+                title = "Resultado",
+                valueBoxOutput("freq_ab_result")
+              )
+            )
     ),
     tabItem("bayes_test",
             fluidRow(
@@ -229,8 +236,13 @@ ui <- dashboardPage(
     
   )
 )
-)
 
+
+
+
+ui <- dashboardPage(dbHeader,
+                    dbSidebar,
+                    dbBody)
 
 # SERVER
 server <- function(input,output,session){
